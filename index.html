@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,8 +10,9 @@
     button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
     #output { margin-top: 30px; background: #fff; padding: 25px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; line-height: 1.6; }
     #output strong { display: inline; }
-    #copyBtn { display: none; background-color: #007BFF; color: white; border: none; }
-    #copyMessage { color: green; margin-top: 10px; font-weight: bold; display: none; }
+    #copyBtn, #sheetCopyBtn { background-color: #007BFF; color: white; border: none; display: none; }
+    #sheetCopyBtn { background-color: #28a745; }
+    #copyMessage, #sheetCopyMessage { color: green; margin-top: 10px; font-weight: bold; display: none; }
   </style>
 </head>
 <body>
@@ -60,6 +60,9 @@
   <div id="output"></div>
   <button id="copyBtn" onclick="copyToClipboard()">Copy to Clipboard</button>
   <div id="copyMessage">Copied to clipboard ✅</div>
+
+  <button id="sheetCopyBtn" onclick="copySheetRow()">Copy Row for Google Sheet</button>
+  <div id="sheetCopyMessage">Copied Google Sheet row ✅</div>
 
   <script>
     function formatCurrency(value) {
@@ -118,7 +121,9 @@ Mr.Nobility@nobility.network
 
       document.getElementById('output').innerHTML = loi.trim();
       document.getElementById('copyBtn').style.display = 'inline-block';
+      document.getElementById('sheetCopyBtn').style.display = 'inline-block';
       document.getElementById('copyMessage').style.display = 'none';
+      document.getElementById('sheetCopyMessage').style.display = 'none';
     }
 
     function copyToClipboard() {
@@ -130,7 +135,26 @@ Mr.Nobility@nobility.network
       document.body.removeChild(temp);
       document.getElementById("copyMessage").style.display = 'block';
     }
+
+    function copySheetRow() {
+      const fields = [
+        "propertyAddress", "purchasePrice", "downPayment", "monthlyPayment",
+        "interestRate", "balloonTerm", "amortization", "insurance",
+        "taxes", "closeEscrow", "emd"
+      ];
+      const row = fields.map(id => document.getElementById(id).value).join("\t");
+
+      const temp = document.createElement("textarea");
+      temp.value = row;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+
+      document.getElementById("sheetCopyMessage").style.display = 'block';
+    }
   </script>
 
 </body>
 </html>
+
