@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LOI Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f2f2f2; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input { width: 100%; padding: 8px; margin-top: 5px; font-size: 14px; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #output { margin-top: 30px; background: #fff; padding: 25px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; line-height: 1.6; }
+    #output strong { display: inline; }
+    #copyBtn, #sheetCopyBtn { background-color: #007BFF; color: white; border: none; display: none; }
+    #sheetCopyBtn { background-color: #28a745; }
+    #copyMessage, #sheetCopyMessage { color: green; margin-top: 10px; font-weight: bold; display: none; }
+  </style>
+</head>
+<body>
+
+  <h2>Seller Finance LOI Generator</h2>
+
+  <label>Agent Name</label>
+  <input type="text" id="agentName">
+
+  <label>Property Address</label>
+  <input type="text" id="propertyAddress">
+
+  <label>Purchase Price ($)</label>
+  <input type="number" id="purchasePrice">
+
+  <label>Down Payment ($)</label>
+  <input type="number" id="downPayment">
+
+  <label>Monthly Payment (PITI) ($)</label>
+  <input type="number" id="monthlyPayment">
+
+  <label>Interest Rate (%)</label>
+  <input type="number" id="interestRate" step="0.01">
+
+  <label>Balloon Term (years)</label>
+  <input type="number" id="balloonTerm">
+
+  <label>Amortization (years)</label>
+  <input type="number" id="amortization">
+
+  <label>Monthly Insurance ($)</label>
+  <input type="number" id="insurance">
+
+  <label>Monthly Property Taxes ($)</label>
+  <input type="number" id="taxes">
+
+  <label>Close of Escrow</label>
+  <input type="text" id="closeEscrow" placeholder="e.g. On or before 30 days from signed contract">
+
+  <label>Earnest Money Deposit ($)</label>
+  <input type="number" id="emd">
+
+  
+  <label>Your Name</label>
+  <input type="text" id="yourName" value="Dalton Eddleman">
+
+  <label>Your Phone</label>
+  <input type="text" id="yourPhone" value="512-925-2429">
+
+  <label>Your Email</label>
+  <input type="text" id="yourEmail" value="Mr.Nobility@nobility.network">
+
+  <label>Offer Type</label>
+  <select id="offerType">
+    <option value="sellerFinance">Seller Finance</option>
+    <option value="cash">Cash Offer</option>
+  </select>
+
+  <label>Paste Deal Row (TSV)</label>
+  <textarea id="tsvInput" rows="4" placeholder="Paste your TSV row here..."></textarea>
+  <button onclick="parseTSV()">Fill Form from TSV</button>
+
+  <button onclick="generateEmail()">Generate LOI Email</button>
+
+  <div id="output"></div>
+  <button id="copyBtn" onclick="copyToClipboard()">Copy to Clipboard</button>
+  <div id="copyMessage">Copied to clipboard ✅</div>
+
+  <button id="sheetCopyBtn" onclick="copySheetRow()">Copy Row for Google Sheet</button>
+  <div id="sheetCopyMessage">Copied Google Sheet row ✅</div>
+
+  <script>document.addEventListener("DOMContentLoaded", function() {
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    }
+
+    
+    function parseTSV() {
+      const raw = document.getElementById("tsvInput").value.trim();
+      const lines = raw.split("\n");
+      if (lines.length < 2) return;
+
+      const headers = lines[0].split("\t");
+      const values = lines[1].split("\t");
+
+      const headerMap = {
+        "Full Address": "propertyAddress",
+        "Purchase Price": "purchasePrice",
+        "Down Payment": "downPayment",
+        "Monthly Payment (PITI)": "monthlyPayment",
+        "Interest Rate": "interestRate",
+        "Balloon Term": "balloonTerm",
+        "Amortization": "amortization",
+        "Monthly Insurance": "insurance",
+        "Monthly Taxes": "taxes",
+        "Close of Escrow": "closeEscrow",
+        "EMD": "emd"
+      };
+
+      headers.forEach((header, i) => {
+        const fieldId = headerMap[header.trim()];
+        if (fieldId && values[i] !== undefined) {
+          document.getElementById(fieldId).value = values[i].trim();
+        }
+      });
+    }
+
+
+
+    function generateEmail() {
+
+    function copyToClipboard() {
+      const temp = document.createElement("textarea");
+      temp.value = document.getElementById("output").innerText;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+      document.getElementById("copyMessage").style.display = 'block';
+    }
+
+    function copySheetRow() {
+      const fields = [
+        "propertyAddress", "purchasePrice", "downPayment", "monthlyPayment",
+        "interestRate", "balloonTerm", "amortization", "insurance",
+        "taxes", "closeEscrow", "emd"
+      ];
+      const row = fields.map(id => document.getElementById(id).value).join("\t");
+
+      const temp = document.createElement("textarea");
+      temp.value = row;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+
+      document.getElementById("sheetCopyMessage").style.display = 'block';
+    }
+  });</script>
+
+</body>
+</html>
+
