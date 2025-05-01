@@ -88,7 +88,18 @@
       document.getElementById("generateBtn").addEventListener("click", function () {
         const agent = document.getElementById('agentName').value;
         const address = document.getElementById('propertyAddress').value;
-        const price = formatCurrency(document.getElementById('purchasePrice').value);
+let offerPrice = document.getElementById('purchasePrice').value;
+
+// If it's a cash offer, calculate 68% of the Listing Price from TSV
+if (document.getElementById('offerType').value === 'cash') {
+  const parsedTSV = document.getElementById("tsvInput").value.trim().split("\t");
+  const listingPrice = parseFloat(parsedTSV[3] || 0); // column index 3 = Listing Price
+  if (!isNaN(listingPrice)) {
+    offerPrice = (listingPrice * 0.68).toFixed(0);
+  }
+}
+
+const price = formatCurrency(offerPrice);
         const down = formatCurrency(document.getElementById('downPayment').value);
         const monthly = formatCurrency(document.getElementById('monthlyPayment').value);
         const rate = parseFloat(document.getElementById('interestRate').value || 0).toFixed(2) + '%';
