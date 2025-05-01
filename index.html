@@ -59,8 +59,6 @@
   <textarea id="tsvInput" rows="4"></textarea>
   <button id="parseBtn">Fill Form from TSV</button>
 
-  <div id="debug"><strong>Parsed Values:</strong><br><pre id="parsedOutput">None yet</pre></div>
-
   <button id="generateBtn">Generate LOI Email</button>
   <div id="output"></div>
   <button id="copyBtn">Copy to Clipboard</button>
@@ -75,8 +73,6 @@
       document.getElementById("parseBtn").addEventListener("click", function () {
         const raw = document.getElementById("tsvInput").value.trim();
         const values = raw.split("\t");
-        document.getElementById("parsedOutput").innerText = JSON.stringify(values, null, 2);
-
         const fieldMap = {
           1: "propertyAddress",
           2: "purchasePrice",
