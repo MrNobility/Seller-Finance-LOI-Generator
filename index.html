@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LOI Generator</title>
+  <title>LOI Generator (No TSV Headers)</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f2f2f2; }
     label { display: block; margin-top: 15px; font-weight: bold; }
@@ -17,7 +17,7 @@
 </head>
 <body>
 
-  <h2>Seller Finance LOI Generator</h2>
+  <h2>Seller Finance LOI Generator (No TSV Headers)</h2>
 
   <label>Agent Name</label>
   <input type="text" id="agentName">
@@ -71,17 +71,14 @@
   </select>
 
   <label>Paste Deal Row (TSV)</label>
-  <textarea id="tsvInput" rows="4" placeholder="Paste your TSV row here..."></textarea>
-  <button onclick="parseTSV()">Fill Form from TSV</button>
+  <textarea id="tsvInput" rows="4" placeholder="Paste your TSV row here (no headers)..."></textarea>
+  <button id="parseBtn">Fill Form from TSV</button>
 
-  <button onclick="generateEmail()">Generate LOI Email</button>
+  <button id="generateBtn">Generate LOI Email</button>
 
   <div id="output"></div>
-  <button id="copyBtn" onclick="copyToClipboard()">Copy to Clipboard</button>
+  <button id="copyBtn">Copy to Clipboard</button>
   <div id="copyMessage">Copied to clipboard ✅</div>
-
-  <button id="sheetCopyBtn" onclick="copySheetRow()">Copy Row for Google Sheet</button>
-  <div id="sheetCopyMessage">Copied Google Sheet row ✅</div>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -90,36 +87,28 @@
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
       }
 
-      function parseTSV() {
-        const raw = document.getElementById("tsvInput").value.trim();
-        const lines = raw.split("\n");
-        if (lines.length < 2) return;
+      document.getElementById("parseBtn").addEventListener("click", function () {
+        const values = document.getElementById("tsvInput").value.trim().split("\\t");
 
-        const headers = lines[0].split("\t");
-        const values = lines[1].split("\t");
-
-        const headerMap = {
-          "Full Address": "propertyAddress",
-          "Purchase Price": "purchasePrice",
-          "Monthly Payment (PITI)": "monthlyPayment",
-          "Balloon Term": "balloonTerm",
-          "Monthly Insurance": "insurance",
-          "Monthly Taxes": "taxes",
-          "Close of Escrow": "closeEscrow",
-          "Emd": "emd"
+        const indexMap = {
+          1: "propertyAddress",   // Full Address
+          2: "purchasePrice",     // Purchase Price
+          5: "monthlyPayment",    // Monthly Payment (PITI)
+          6: "balloonTerm",       // Balloon Term
+          7: "insurance",         // Monthly Insurance
+          8: "taxes",             // Monthly Taxes
+          15: "closeEscrow",      // Close of Escrow
+          16: "emd"               // Earnest Money Deposit
         };
 
-        headers.forEach((header, i) => {
-          const fieldId = headerMap[header.trim()];
-          if (fieldId && values[i] !== undefined) {
-            document.getElementById(fieldId).value = values[i].trim();
+        for (const [i, id] of Object.entries(indexMap)) {
+          if (values[i]) {
+            document.getElementById(id).value = values[i].trim();
           }
-        });
-      }
+        }
+      });
 
-      window.parseTSV = parseTSV;
-
-      window.generateEmail = function () {
+      document.getElementById("generateBtn").addEventListener("click", function () {
         const agent = document.getElementById('agentName').value;
         const address = document.getElementById('propertyAddress').value;
         const price = formatCurrency(document.getElementById('purchasePrice').value);
@@ -175,7 +164,6 @@ That’s why we’re offering a seller finance structure that gives your client 
 <strong>Added Security for Your Client:</strong><br>
 To ensure trust and demonstrate our commitment, we will provide a <strong>Deed in Lieu of Foreclosure</strong> at closing. Should we ever miss two consecutive payments, your client can reclaim the property without going through a lengthy foreclosure process.<br><br>
 We believe this is a true win-win: your client receives the full asking price, strong monthly income, and layered protection—while we gain the opportunity to revitalize and maximize this asset.<br><br>
-Please don’t hesitate to reach out if you have any questions or need clarification. We’re ready to move quickly and make this a smooth and successful transaction for everyone involved.<br><br>
 Warm regards,<br>
 ${name}<br>
 ${phone}<br>
@@ -186,12 +174,9 @@ ${email}<br><br>
 
         document.getElementById('output').innerHTML = loi.trim();
         document.getElementById('copyBtn').style.display = 'inline-block';
-        document.getElementById('sheetCopyBtn').style.display = 'inline-block';
-        document.getElementById('copyMessage').style.display = 'none';
-        document.getElementById('sheetCopyMessage').style.display = 'none';
-      }
+      });
 
-      window.copyToClipboard = function () {
+      document.getElementById("copyBtn").addEventListener("click", function () {
         const temp = document.createElement("textarea");
         temp.value = document.getElementById("output").innerText;
         document.body.appendChild(temp);
@@ -199,25 +184,7 @@ ${email}<br><br>
         document.execCommand("copy");
         document.body.removeChild(temp);
         document.getElementById("copyMessage").style.display = 'block';
-      }
-
-      window.copySheetRow = function () {
-        const fields = [
-          "propertyAddress", "purchasePrice", "downPayment", "monthlyPayment",
-          "interestRate", "balloonTerm", "amortization", "insurance",
-          "taxes", "closeEscrow", "emd"
-        ];
-        const row = fields.map(id => document.getElementById(id).value).join("\\t");
-
-        const temp = document.createElement("textarea");
-        temp.value = row;
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand("copy");
-        document.body.removeChild(temp);
-
-        document.getElementById("sheetCopyMessage").style.display = 'block';
-      }
+      });
 
     });
   </script>
