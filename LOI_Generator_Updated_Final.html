@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LOI Generator (Corrected TSV Mapping)</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f2f2f2; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; font-size: 14px; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #output, #debug { margin-top: 30px; background: #fff; padding: 25px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; line-height: 1.6; }
+    #output strong { display: inline; }
+    #copyBtn { background-color: #007BFF; color: white; border: none; display: none; }
+    #copyMessage { color: green; margin-top: 10px; font-weight: bold; display: none; }
+    #debug { font-size: 14px; background: #eef; }
+  </style>
+</head>
+<body>
+  <h2>Seller Finance LOI Generator (Corrected TSV Mapping)</h2>
+  <label>Agent Name</label>
+  <input type="text" id="agentName">
+  <label>Property Address</label>
+  <input type="text" id="propertyAddress">
+  <label>Purchase Price ($)</label>
+  <input type="number" id="purchasePrice">
+  <label>Down Payment ($)</label>
+  <input type="number" id="downPayment">
+  <label>Monthly Payment (PITI) ($)</label>
+  <input type="number" id="monthlyPayment">
+  <label>Interest Rate (%)</label>
+  <input type="number" id="interestRate" step="0.01">
+  <label>Balloon Term (years)</label>
+  <input type="number" id="balloonTerm">
+  <label>Amortization (years)</label>
+  <input type="number" id="amortization" value="30">
+  <label>Monthly Insurance ($)</label>
+  <input type="number" id="insurance">
+  <label>Monthly Property Taxes ($)</label>
+  <input type="number" id="taxes">
+  <label>Close of Escrow</label>
+  <input type="text" id="closeEscrow">
+  <label>Earnest Money Deposit ($)</label>
+  <input type="number" id="emd">
+  <label>Your Name</label>
+  <input type="text" id="yourName" value="Dalton Eddleman">
+  <label>Your Phone</label>
+  <input type="text" id="yourPhone" value="512-925-2429">
+  <label>Your Email</label>
+  <input type="text" id="yourEmail" value="Mr.Nobility@nobility.network">
+  <label>Offer Type</label>
+  <select id="offerType">
+    <option value="sellerFinance">Seller Finance</option>
+    <option value="cash">Cash Offer</option>
+  </select>
+  <label>Paste Deal Row (TSV)</label>
+  <textarea id="tsvInput" rows="4"></textarea>
+  <button id="parseBtn">Fill Form from TSV</button>
+  <div id="debug"><strong>Parsed Values:</strong><br><pre id="parsedOutput">None yet</pre></div>
+  <button id="generateBtn">Generate LOI Email</button>
+  <div id="output"></div>
+  <button id="copyBtn">Copy to Clipboard</button>
+  <div id="copyMessage">Copied to clipboard ✅</div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+      }
+      document.getElementById("parseBtn").addEventListener("click", function () {
+        const raw = document.getElementById("tsvInput").value.trim();
+        const values = raw.split("\t");
+        document.getElementById("parsedOutput").innerText = JSON.stringify(values, null, 2);
+        const fieldMap = {
+          1: "propertyAddress", 2: "purchasePrice", 5: "downPayment", 6: "interestRate",
+          7: "monthlyPayment", 8: "balloonTerm", 9: "amortization", 10: "insurance",
+          11: "taxes", 18: "closeEscrow", 19: "emd"
+        };
+        for (const [i, id] of Object.entries(fieldMap)) {
+          if (values[i]) {
+            const field = document.getElementById(id);
+            if (field) field.value = values[i].trim();
+          }
+        }
+        if (!document.getElementById("amortization").value) {
+          document.getElementById("amortization").value = "30";
+        }
+      });
+
+      document.getElementById("generateBtn").addEventListener("click", function () {
+        const agent = document.getElementById('agentName').value;
+        const address = document.getElementById('propertyAddress').value;
+        const price = formatCurrency(document.getElementById('purchasePrice').value);
+        const down = formatCurrency(document.getElementById('downPayment').value);
+        const monthly = formatCurrency(document.getElementById('monthlyPayment').value);
+        const rate = parseFloat(document.getElementById('interestRate').value || 0).toFixed(2) + '%';
+        const balloon = document.getElementById('balloonTerm').value + ' years';
+        const amort = document.getElementById('amortization').value + ' years';
+        const insurance = formatCurrency(document.getElementById('insurance').value);
+        const taxes = formatCurrency(document.getElementById('taxes').value);
+        const escrow = document.getElementById('closeEscrow').value;
+        const emd = formatCurrency(document.getElementById('emd').value);
+        const name = document.getElementById('yourName').value;
+        const phone = document.getElementById('yourPhone').value;
+        const email = document.getElementById('yourEmail').value;
+        const type = document.getElementById('offerType').value;
+        let loi = "";
+
+        if (type === "cash") {
+          loi = `Good Day ${agent},<br><br>Thank you for considering our cash offer to purchase your listing at ${address}.<br><br>
+          We are prepared to move quickly with the following offer terms:<br><br>
+          <strong>Offer Details:</strong><br>
+          <strong>Purchase Price:</strong> ${price}<br>
+          <strong>Close of Escrow:</strong> ${escrow}<br>
+          <strong>EMD:</strong> ${emd}, submitted the first day post-inspection<br><br>
+          This offer is intended to make for a fast and simple transaction for both sides. We’re experienced, ready to close, and look forward to making this deal smooth and hassle-free.<br><br>
+          Warm regards,<br>${name}<br>${phone}<br>${email}<br><br>
+          <p style="font-size:12px; color:gray;">This Letter of Intent is non-binding and subject to execution of a formal Purchase Agreement.</p>`;
+        } else {
+          loi = `
+Good Day ${agent},<br><br>
+Thank you for taking the time to review our creative offer to purchase your listing at:<br><br>
+<strong>${address}</strong><br><br>
+We believe this property has tremendous potential. However, as you’re likely aware, today’s high-interest rate environment has made it increasingly difficult for both investors and retail buyers to make the numbers work. Conventional financing rarely produces positive cash flow at this price point, and many retail buyers struggle to qualify for loans on properties like this.<br><br>
+That’s why we’re presenting a seller-financed structure designed to deliver:<br>
+✅ ABOVE full-price offer<br>
+✅ Passive monthly income for your client<br>
+✅ Built-in safeguards for peace of mind<br><br>
+
+<strong>Offer Summary:</strong><br>
+Purchase Price: ${price}<br>
+Down Payment: ${down} (your commission paid upfront)<br>
+Monthly Payment (PITI): ${monthly}<br>
+Interest Rate: ${rate}<br>
+Amortization: ${amort}<br>
+Balloon Payment: ${balloon}<br>
+Monthly Taxes: ${taxes}<br>
+Monthly Insurance: ${insurance}<br>
+Close of Escrow: ${escrow}<br>
+Earnest Money Deposit (EMD): ${emd}<br><br>
+
+<strong>Contingencies:</strong><br>
+- Clear Title<br>
+- Property Condition acceptable upon inspection<br>
+- Verification of Rental Income<br><br>
+
+<strong>Buyer Safeguards – For Seller’s Peace of Mind:</strong><br>
+We will execute a Deed in Lieu of Foreclosure at closing. If we ever miss two consecutive payments, your client can reclaim the property immediately — no court, no expense, no delay.<br><br>
+
+<strong>Flexibility With Intention:</strong><br>
+Creative financing is a delicate balance. We’re happy to discuss small adjustments as long as the deal remains viable for both sides.<br><br>
+
+Warm regards,<br>
+<strong>${name}</strong><br>
+${phone}<br>
+${email}<br>
+<p style="font-size:12px; color:gray;">
+This letter is a non-binding expression of interest and does not constitute a formal agreement. All terms are subject to due diligence, negotiation, and execution of a mutually acceptable purchase agreement.
+</p>`;
+        }
+
+        document.getElementById('output').innerHTML = loi.trim();
+        document.getElementById('copyBtn').style.display = 'inline-block';
+      });
+
+      document.getElementById("copyBtn").addEventListener("click", function () {
+        const temp = document.createElement("textarea");
+        temp.value = document.getElementById("output").innerText;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        document.getElementById("copyMessage").style.display = 'block';
+      });
+    });
+  </script>
+</body>
+</html>
