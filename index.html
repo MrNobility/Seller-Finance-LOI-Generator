@@ -6,7 +6,7 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f2f2f2; }
     label { display: block; margin-top: 15px; font-weight: bold; }
-    input { width: 100%; padding: 8px; margin-top: 5px; font-size: 14px; }
+    input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; font-size: 14px; }
     button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
     #output { margin-top: 30px; background: #fff; padding: 25px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; line-height: 1.6; }
     #output strong { display: inline; }
@@ -55,7 +55,6 @@
   <label>Earnest Money Deposit ($)</label>
   <input type="number" id="emd">
 
-  
   <label>Your Name</label>
   <input type="text" id="yourName" value="Dalton Eddleman">
 
@@ -84,75 +83,144 @@
   <button id="sheetCopyBtn" onclick="copySheetRow()">Copy Row for Google Sheet</button>
   <div id="sheetCopyMessage">Copied Google Sheet row ✅</div>
 
-  <script>document.addEventListener("DOMContentLoaded", function() {
-    function formatCurrency(value) {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-    }
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
 
-    
-    function parseTSV() {
-      const raw = document.getElementById("tsvInput").value.trim();
-      const lines = raw.split("\n");
-      if (lines.length < 2) return;
+      function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+      }
 
-      const headers = lines[0].split("\t");
-      const values = lines[1].split("\t");
+      function parseTSV() {
+        const raw = document.getElementById("tsvInput").value.trim();
+        const lines = raw.split("\n");
+        if (lines.length < 2) return;
 
-      const headerMap = {
-        "Full Address": "propertyAddress",
-        "Purchase Price": "purchasePrice",
-        "Down Payment": "downPayment",
-        "Monthly Payment (PITI)": "monthlyPayment",
-        "Interest Rate": "interestRate",
-        "Balloon Term": "balloonTerm",
-        "Amortization": "amortization",
-        "Monthly Insurance": "insurance",
-        "Monthly Taxes": "taxes",
-        "Close of Escrow": "closeEscrow",
-        "EMD": "emd"
-      };
+        const headers = lines[0].split("\t");
+        const values = lines[1].split("\t");
 
-      headers.forEach((header, i) => {
-        const fieldId = headerMap[header.trim()];
-        if (fieldId && values[i] !== undefined) {
-          document.getElementById(fieldId).value = values[i].trim();
+        const headerMap = {
+          "Full Address": "propertyAddress",
+          "Purchase Price": "purchasePrice",
+          "Monthly Payment (PITI)": "monthlyPayment",
+          "Balloon Term": "balloonTerm",
+          "Monthly Insurance": "insurance",
+          "Monthly Taxes": "taxes",
+          "Close of Escrow": "closeEscrow",
+          "Emd": "emd"
+        };
+
+        headers.forEach((header, i) => {
+          const fieldId = headerMap[header.trim()];
+          if (fieldId && values[i] !== undefined) {
+            document.getElementById(fieldId).value = values[i].trim();
+          }
+        });
+      }
+
+      window.parseTSV = parseTSV;
+
+      window.generateEmail = function () {
+        const agent = document.getElementById('agentName').value;
+        const address = document.getElementById('propertyAddress').value;
+        const price = formatCurrency(document.getElementById('purchasePrice').value);
+        const down = formatCurrency(document.getElementById('downPayment').value);
+        const monthly = formatCurrency(document.getElementById('monthlyPayment').value);
+        const rate = parseFloat(document.getElementById('interestRate').value || 0).toFixed(2) + '%';
+        const balloon = document.getElementById('balloonTerm').value + ' years';
+        const amort = document.getElementById('amortization').value + ' years';
+        const insurance = formatCurrency(document.getElementById('insurance').value);
+        const taxes = formatCurrency(document.getElementById('taxes').value);
+        const escrow = document.getElementById('closeEscrow').value;
+        const emd = formatCurrency(document.getElementById('emd').value);
+        const name = document.getElementById('yourName').value;
+        const phone = document.getElementById('yourPhone').value;
+        const email = document.getElementById('yourEmail').value;
+        const type = document.getElementById('offerType').value;
+
+        let loi = "";
+
+        if (type === "cash") {
+          loi = `
+Good Day ${agent},<br><br>
+Thank you for considering our cash offer to purchase your listing at ${address}.<br><br>
+We are prepared to move quickly with the following offer terms:<br><br>
+<strong>Offer Details:</strong><br>
+<strong>Purchase Price:</strong> ${price}<br>
+<strong>Close of Escrow:</strong> ${escrow}<br>
+<strong>EMD:</strong> ${emd}, submitted the first day post-inspection<br><br>
+This offer is intended to make for a fast and simple transaction for both sides. We’re experienced, ready to close, and look forward to making this deal smooth and hassle-free.<br><br>
+Warm regards,<br>
+${name}<br>
+${phone}<br>
+${email}<br><br>
+<p style="font-size:12px; color:gray;">This Letter of Intent is non-binding and subject to execution of a formal Purchase Agreement.</p>
+          `;
+        } else {
+          loi = `
+Good Day ${agent},<br><br>
+Thank you for taking the time to review our creative offer to purchase your listing at ${address}.<br><br>
+We believe this property has tremendous potential, but as you’re likely aware, today’s high interest rate environment is making it difficult for both investors and retail buyers to make deals pencil. Traditional financing simply doesn’t create cash flow at this price point—and retail buyers often can’t qualify for loans on properties like this.<br><br>
+That’s why we’re offering a seller finance structure that gives your client a full-price offer, passive monthly income, and the peace of mind of strong buyer safeguards.<br><br>
+<strong>Offer Details:</strong><br>
+<strong>Purchase Price:</strong> ${price}<br>
+<strong>Down Payment:</strong> ${down} (includes your commission paid up front)<br>
+<strong>Monthly Payment (PITI):</strong> ${monthly}<br>
+<strong>Interest Rate:</strong> ${rate}<br>
+<strong>Balloon Term:</strong> ${balloon}<br>
+<strong>Amortization:</strong> ${amort}<br>
+<strong>Monthly Insurance:</strong> ${insurance}<br>
+<strong>Monthly Property Taxes:</strong> ${taxes}<br>
+<strong>Close of Escrow:</strong> ${escrow}<br>
+<strong>EMD:</strong> ${emd}, submitted the first day post-inspection<br><br>
+<strong>Added Security for Your Client:</strong><br>
+To ensure trust and demonstrate our commitment, we will provide a <strong>Deed in Lieu of Foreclosure</strong> at closing. Should we ever miss two consecutive payments, your client can reclaim the property without going through a lengthy foreclosure process.<br><br>
+We believe this is a true win-win: your client receives the full asking price, strong monthly income, and layered protection—while we gain the opportunity to revitalize and maximize this asset.<br><br>
+Please don’t hesitate to reach out if you have any questions or need clarification. We’re ready to move quickly and make this a smooth and successful transaction for everyone involved.<br><br>
+Warm regards,<br>
+${name}<br>
+${phone}<br>
+${email}<br><br>
+<p style="font-size:12px; color:gray;">This Letter of Intent is non-binding and subject to execution of a formal Purchase Agreement.</p>
+          `;
         }
-      });
-    }
 
+        document.getElementById('output').innerHTML = loi.trim();
+        document.getElementById('copyBtn').style.display = 'inline-block';
+        document.getElementById('sheetCopyBtn').style.display = 'inline-block';
+        document.getElementById('copyMessage').style.display = 'none';
+        document.getElementById('sheetCopyMessage').style.display = 'none';
+      }
 
+      window.copyToClipboard = function () {
+        const temp = document.createElement("textarea");
+        temp.value = document.getElementById("output").innerText;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        document.getElementById("copyMessage").style.display = 'block';
+      }
 
-    function generateEmail() {
+      window.copySheetRow = function () {
+        const fields = [
+          "propertyAddress", "purchasePrice", "downPayment", "monthlyPayment",
+          "interestRate", "balloonTerm", "amortization", "insurance",
+          "taxes", "closeEscrow", "emd"
+        ];
+        const row = fields.map(id => document.getElementById(id).value).join("\\t");
 
-    function copyToClipboard() {
-      const temp = document.createElement("textarea");
-      temp.value = document.getElementById("output").innerText;
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand("copy");
-      document.body.removeChild(temp);
-      document.getElementById("copyMessage").style.display = 'block';
-    }
+        const temp = document.createElement("textarea");
+        temp.value = row;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
 
-    function copySheetRow() {
-      const fields = [
-        "propertyAddress", "purchasePrice", "downPayment", "monthlyPayment",
-        "interestRate", "balloonTerm", "amortization", "insurance",
-        "taxes", "closeEscrow", "emd"
-      ];
-      const row = fields.map(id => document.getElementById(id).value).join("\t");
+        document.getElementById("sheetCopyMessage").style.display = 'block';
+      }
 
-      const temp = document.createElement("textarea");
-      temp.value = row;
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand("copy");
-      document.body.removeChild(temp);
-
-      document.getElementById("sheetCopyMessage").style.display = 'block';
-    }
-  });</script>
+    });
+  </script>
 
 </body>
 </html>
-
