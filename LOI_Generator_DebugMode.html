@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LOI Generator with Debug</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f2f2f2; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; font-size: 14px; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #output, #debug { margin-top: 30px; background: #fff; padding: 25px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; line-height: 1.6; }
+    #output strong { display: inline; }
+    #debug { font-size: 14px; background: #eef; }
+  </style>
+</head>
+<body>
+
+  <h2>Seller Finance LOI Generator (Debug Mode)</h2>
+
+  <label>Agent Name</label>
+  <input type="text" id="agentName">
+
+  <label>Property Address</label>
+  <input type="text" id="propertyAddress">
+
+  <label>Purchase Price ($)</label>
+  <input type="number" id="purchasePrice">
+
+  <label>Monthly Payment (PITI) ($)</label>
+  <input type="number" id="monthlyPayment">
+
+  <label>Balloon Term (years)</label>
+  <input type="number" id="balloonTerm">
+
+  <label>Monthly Insurance ($)</label>
+  <input type="number" id="insurance">
+
+  <label>Monthly Property Taxes ($)</label>
+  <input type="number" id="taxes">
+
+  <label>Close of Escrow</label>
+  <input type="text" id="closeEscrow">
+
+  <label>Earnest Money Deposit ($)</label>
+  <input type="number" id="emd">
+
+  <label>Paste Deal Row (TSV or space-delimited)</label>
+  <textarea id="tsvInput" rows="4" placeholder="Paste your row here..."></textarea>
+  <button id="parseBtn">Fill Form</button>
+
+  <div id="debug"><strong>Parsed Values:</strong><br><pre id="parsedOutput">None yet</pre></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("parseBtn").addEventListener("click", function () {
+        const raw = document.getElementById("tsvInput").value.trim();
+        const values = raw.split(/\t|\s{2,}|\s(?=\d)/);  // handles tabs OR multiple spaces
+        document.getElementById("parsedOutput").innerText = JSON.stringify(values, null, 2);
+
+        const indexMap = {
+          1: "propertyAddress",   // Full Address
+          2: "purchasePrice",     // Purchase Price
+          5: "monthlyPayment",    // Monthly Payment (PITI)
+          6: "balloonTerm",       // Balloon Term
+          7: "insurance",         // Monthly Insurance
+          8: "taxes",             // Monthly Taxes
+          15: "closeEscrow",      // Close of Escrow
+          16: "emd"               // Earnest Money Deposit
+        };
+
+        for (const [i, id] of Object.entries(indexMap)) {
+          if (values[i]) {
+            const field = document.getElementById(id);
+            if (field) field.value = values[i].trim();
+          }
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
